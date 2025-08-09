@@ -1,6 +1,6 @@
 "use client"
 
-import UgoPrototypes from "../app_v0modified"
+import UgoPrototypes from "../src/app"
 
 export default function SyntheticV0PageForDeployment() {
   return <UgoPrototypes />

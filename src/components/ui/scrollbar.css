@@ -1,0 +1,137 @@
+/* Allow natural browser scrolling but hide ugly scrollbars */
+/* Keep browser scroll functional but make scrollbars invisible by default */
+
+/* Hide default scrollbars everywhere except monitor content */
+*:not(.desktop-monitor-content) {
+  scrollbar-width: thin;
+  scrollbar-color: transparent transparent;
+}
+
+*:not(.desktop-monitor-content)::-webkit-scrollbar {
+  width: 0px;
+  background: transparent;
+}
+
+*:not(.desktop-monitor-content)::-webkit-scrollbar-thumb {
+  background: transparent;
+}
+
+/* Custom Browser Scrollbar for Desktop Frame */
+
+/* Only apply to desktop monitor content */
+.desktop-monitor-content::-webkit-scrollbar {
+  display: block !important;
+  width: 16px;
+}
+
+.desktop-monitor-content::-webkit-scrollbar-track {
+  background: #f8fafc;
+  border-left: 1px solid #e2e8f0;
+}
+
+.desktop-monitor-content::-webkit-scrollbar-thumb {
+  background: #94a3b8;
+  border: 2px solid #f8fafc;
+  border-radius: 0px;
+  min-height: 40px;
+}
+
+.desktop-monitor-content::-webkit-scrollbar-thumb:hover {
+  background: #64748b;
+}
+
+.desktop-monitor-content::-webkit-scrollbar-thumb:active {
+  background: #475569;
+}
+
+/* Scrollbar Corner */
+.desktop-monitor-content::-webkit-scrollbar-corner {
+  background: #f8fafc;
+}
+
+/* Scrollbar Buttons (arrows) - Show them for realistic browser look */
+.desktop-monitor-content::-webkit-scrollbar-button {
+  display: block;
+  height: 16px;
+  background: #e2e8f0;
+  background-repeat: no-repeat;
+  background-position: center;
+}
+
+.desktop-monitor-content::-webkit-scrollbar-button:hover {
+  background-color: #cbd5e1;
+}
+
+.desktop-monitor-content::-webkit-scrollbar-button:vertical:start:decrement {
+  background-image: url("data:image/svg+xml,%3csvg width='16' height='16' xmlns='http://www.w3.org/2000/svg'%3e%3cpath d='m4 10 4-4 4 4' stroke='%23374151' stroke-width='2' fill='none' stroke-linecap='round' stroke-linejoin='round'/%3e%3c/svg%3e");
+}
+
+.desktop-monitor-content::-webkit-scrollbar-button:vertical:end:increment {
+  background-image: url("data:image/svg+xml,%3csvg width='16' height='16' xmlns='http://www.w3.org/2000/svg'%3e%3cpath d='m4 6 4 4 4-4' stroke='%23374151' stroke-width='2' fill='none' stroke-linecap='round' stroke-linejoin='round'/%3e%3c/svg%3e");
+}
+
+/* Firefox Scrollbar */
+.desktop-monitor-content {
+  scrollbar-width: auto !important;
+  scrollbar-color: #94a3b8 #f8fafc;
+}
+
+/* Mobile Content Scrollbar - Only when needed */
+.mobile-content-scroll::-webkit-scrollbar {
+  display: block !important;
+  width: 8px;
+}
+
+.mobile-content-scroll::-webkit-scrollbar-track {
+  background: #f1f5f9;
+  border-radius: 4px;
+}
+
+.mobile-content-scroll::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 4px;
+  border: 1px solid #f1f5f9;
+  min-height: 20px;
+}
+
+.mobile-content-scroll::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
+}
+
+.mobile-content-scroll::-webkit-scrollbar-thumb:active {
+  background: #64748b;
+}
+
+/* Hide scrollbar buttons on mobile */
+.mobile-content-scroll::-webkit-scrollbar-button {
+  display: none;
+}
+
+/* Firefox Mobile Scrollbar */
+.mobile-content-scroll {
+  scrollbar-width: thin !important;
+  scrollbar-color: #cbd5e1 #f1f5f9;
+}
+
+/* QR Scanner Animation */
+@keyframes scan {
+  0% { top: 10%; }
+  50% { top: 80%; }
+  100% { top: 10%; }
+}
+
+/* Fade in animation */
+@keyframes fade-in {
+  0% { opacity: 0; transform: translateY(-10px); }
+  100% { opacity: 1; transform: translateY(0); }
+}
+
+.animate-fade-in {
+  animation: fade-in 0.3s ease-out;
+}
+
+/* QR Code corner borders */
+.border-l-3 { border-left-width: 3px; }
+.border-r-3 { border-right-width: 3px; }
+.border-t-3 { border-top-width: 3px; }
+.border-b-3 { border-bottom-width: 3px; }
