@@ -420,6 +420,13 @@ export function ReceiveModal({
   )
 }
 
+interface User {
+  id: string
+  name: string
+  studentId: string
+  tokens?: number
+}
+
 export function CreateTokenModal({
   isOpen,
   onClose,
@@ -431,139 +438,389 @@ export function CreateTokenModal({
   const colors = getThemeColors(isDark)
   const [tokenData, setTokenData] = useState({
     name: "",
-    symbol: "",
-    amount: "",
+    totalSupply: "",
     transferable: true,
     hasExpiry: false,
     expiryDate: "",
     color: ugoColors.blue,
   })
+  
+  const [searchUser, setSearchUser] = useState("")
+  const [selectedUsers, setSelectedUsers] = useState<User[]>([])
+  const [isCreating, setIsCreating] = useState(false)
+  const [showSuccess, setShowSuccess] = useState(false)
 
   const tokenColors = [ugoColors.red, ugoColors.orange, ugoColors.blue, ugoColors.green]
+  
+  // Mock users data
+  const mockUsers: User[] = [
+    { id: "1", name: "María Elena García Rodríguez", studentId: "20210156789" },
+    { id: "2", name: "Carlos Alberto Mendoza Silva", studentId: "20190234567" },
+    { id: "3", name: "Ana Sofia Herrera López", studentId: "20220987654" },
+    { id: "4", name: "Diego Fernando Ruiz Castro", studentId: "20180345678" },
+    { id: "5", name: "Lucía Patricia Vega Moreno", studentId: "20210876543" },
+    { id: "6", name: "Roberto Alejandro Jiménez Torres", studentId: "20200456789" },
+    { id: "7", name: "Elena Sofía Ramírez Cruz", studentId: "20211234567" },
+    { id: "8", name: "Miguel Ángel Torres Pérez", studentId: "20191876543" }
+  ]
+  
+  const filteredUsers = mockUsers.filter(user => 
+    user.name.toLowerCase().includes(searchUser.toLowerCase()) ||
+    user.studentId.includes(searchUser)
+  )
 
-  const handleCreate = () => {
-    alert(`Token "${tokenData.name}" creado exitosamente`)
-    onClose()
+  const handleUserToggle = (user: User) => {
+    setSelectedUsers(prev => {
+      const exists = prev.find(u => u.id === user.id)
+      if (exists) {
+        return prev.filter(u => u.id !== user.id)
+      } else {
+        return [...prev, { ...user, tokens: 1 }]
+      }
+    })
+  }
+  
+  const handleUserTokenChange = (userId: string, tokens: number) => {
+    setSelectedUsers(prev => 
+      prev.map(user => 
+        user.id === userId ? { ...user, tokens } : user
+      )
+    )
   }
 
+  const handleCreate = async () => {
+    if (!tokenData.name || !tokenData.totalSupply || selectedUsers.length === 0) {
+      alert("Por favor completa todos los campos requeridos")
+      return
+    }
+    
+    setIsCreating(true)
+    
+    // Simulate creation process
+    await new Promise(resolve => setTimeout(resolve, 2500))
+    
+    setIsCreating(false)
+    setShowSuccess(true)
+    
+    // Show success for 2 seconds then close
+    setTimeout(() => {
+      setShowSuccess(false)
+      setTokenData({
+        name: "",
+        totalSupply: "",
+        transferable: true,
+        hasExpiry: false,
+        expiryDate: "",
+        color: ugoColors.blue,
+      })
+      setSelectedUsers([])
+      setSearchUser("")
+      onClose()
+    }, 2500)
+  }
+  
+  const getTotalTokensToDistribute = () => selectedUsers.reduce((sum, user) => sum + (user.tokens || 0), 0)
+
+  if (!isOpen) return null
+
   return (
-    <Modal isOpen={isOpen} onClose={onClose} title="Crear Nuevo Token">
-      <div className="space-y-4">
-        <div>
-          <label className="block text-sm font-medium mb-2" style={{ color: colors.text }}>
-            Nombre del Token
-          </label>
-          <input
-            type="text"
-            value={tokenData.name}
-            onChange={(e) => setTokenData({ ...tokenData, name: e.target.value })}
-            placeholder="Ej: Almuerzo"
-            className="w-full p-2 border rounded-lg"
-            style={{
-              backgroundColor: colors.surface,
-              borderColor: colors.border,
-              color: colors.text,
-            }}
-          />
+    <div className="absolute inset-0 z-50 flex items-center justify-center">
+      <div className="absolute inset-0 bg-black bg-opacity-60" onClick={onClose} />
+      <div className="relative w-full max-w-4xl mx-4 rounded-xl shadow-xl max-h-[90vh] overflow-y-auto" style={{ backgroundColor: colors.surface }}>
+        <div className="flex items-center justify-between p-6 border-b" style={{ borderColor: colors.border }}>
+          <h2 className="text-xl font-semibold" style={{ color: colors.text }}>
+            Crear Nuevo Token
+          </h2>
+          <button onClick={onClose} className="text-gray-500 hover:text-gray-700">
+            <X size={24} />
+          </button>
         </div>
-
-        <div>
-          <label className="block text-sm font-medium mb-2" style={{ color: colors.text }}>
-            Cantidad inicial
-          </label>
-          <input
-            type="number"
-            value={tokenData.amount}
-            onChange={(e) => setTokenData({ ...tokenData, amount: e.target.value })}
-            placeholder="100"
-            className="w-full p-2 border rounded-lg"
-            style={{
-              backgroundColor: colors.surface,
-              borderColor: colors.border,
-              color: colors.text,
-            }}
-          />
-        </div>
-
-        <div>
-          <label className="block text-sm font-medium mb-2" style={{ color: colors.text }}>
-            Color del Token
-          </label>
-          <div className="flex space-x-2">
-            {tokenColors.map((color) => (
-              <button
-                key={color}
-                onClick={() => setTokenData({ ...tokenData, color })}
-                className={`w-8 h-8 rounded-full border-2 ${
-                  tokenData.color === color ? "border-gray-800" : "border-gray-300"
-                }`}
-                style={{ backgroundColor: color }}
-              />
-            ))}
+        
+        {showSuccess ? (
+          // Success Animation
+          <div className="text-center py-12">
+            <div className="relative mb-6">
+              <div className="w-24 h-24 mx-auto bg-green-100 rounded-full flex items-center justify-center">
+                <div className="w-20 h-20 bg-green-500 rounded-full flex items-center justify-center animate-pulse">
+                  <svg className="w-10 h-10 text-white animate-bounce" fill="currentColor" viewBox="0 0 20 20">
+                    <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                  </svg>
+                </div>
+              </div>
+              <div className="absolute inset-0 w-24 h-24 mx-auto bg-green-500 rounded-full animate-ping opacity-20"></div>
+            </div>
+            <h3 className="text-2xl font-bold text-green-600 mb-4">¡Token Creado Exitosamente!</h3>
+            <p className="text-lg" style={{ color: colors.textSecondary }}>
+              {getTotalTokensToDistribute()} tokens de "{tokenData.name}" distribuidos a {selectedUsers.length} usuarios
+            </p>
+            <div className="mt-6 p-4 bg-green-50 rounded-lg border border-green-200">
+              <p className="text-sm text-green-700">Los tokens han sido minteados y distribuidos automáticamente</p>
+            </div>
           </div>
-        </div>
+        ) : isCreating ? (
+          // Creating Animation
+          <div className="text-center py-12">
+            <div className="relative mb-6">
+              <div className="w-24 h-24 mx-auto relative">
+                <div 
+                  className="absolute inset-0 border-4 border-transparent rounded-full animate-spin" 
+                  style={{ 
+                    borderTopColor: tokenData.color,
+                    borderRightColor: tokenData.color,
+                    animationDuration: '1.2s'
+                  }}
+                ></div>
+                <div 
+                  className="absolute inset-2 border-3 border-transparent rounded-full animate-spin" 
+                  style={{ 
+                    borderBottomColor: tokenData.color,
+                    borderLeftColor: tokenData.color,
+                    animationDuration: '1.8s',
+                    animationDirection: 'reverse'
+                  }}
+                ></div>
+                <div className="absolute inset-4 rounded-full flex items-center justify-center" style={{ backgroundColor: tokenData.color }}>
+                  <Plus size={24} className="text-white animate-pulse" />
+                </div>
+              </div>
+            </div>
+            <h3 className="text-lg font-semibold mb-2" style={{ color: colors.text }}>Creando tokens...</h3>
+            <p className="text-sm" style={{ color: colors.textSecondary }}>
+              Minteando {getTotalTokensToDistribute()} tokens y distribuyendo a {selectedUsers.length} usuarios
+            </p>
+            <div className="mt-4 flex justify-center space-x-1">
+              <div className="w-2 h-2 rounded-full animate-bounce" style={{ backgroundColor: tokenData.color, animationDelay: '0ms' }}></div>
+              <div className="w-2 h-2 rounded-full animate-bounce" style={{ backgroundColor: tokenData.color, animationDelay: '150ms' }}></div>
+              <div className="w-2 h-2 rounded-full animate-bounce" style={{ backgroundColor: tokenData.color, animationDelay: '300ms' }}></div>
+            </div>
+          </div>
+        ) : (
+          <div className="p-6">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              {/* Left Column - Token Configuration */}
+              <div className="space-y-4">
+                <h3 className="text-lg font-semibold mb-4" style={{ color: colors.text }}>Configuración del Token</h3>
+                
+                <div>
+                  <label className="block text-sm font-medium mb-2" style={{ color: colors.text }}>
+                    Nombre del Token *
+                  </label>
+                  <input
+                    type="text"
+                    value={tokenData.name}
+                    onChange={(e) => setTokenData({ ...tokenData, name: e.target.value })}
+                    placeholder="Ej: Comida, Transporte, Biblioteca"
+                    className="w-full p-3 border rounded-lg"
+                    style={{
+                      backgroundColor: colors.bg,
+                      borderColor: colors.border,
+                      color: colors.text,
+                    }}
+                  />
+                </div>
 
-        <div className="flex items-center justify-between">
-          <span className="text-sm font-medium" style={{ color: colors.text }}>
-            ¿Es transferible?
-          </span>
-          <button
-            onClick={() => setTokenData({ ...tokenData, transferable: !tokenData.transferable })}
-            className={`w-12 h-6 rounded-full ${tokenData.transferable ? "bg-green-500" : "bg-gray-300"} relative transition-colors`}
-          >
-            <div
-              className={`w-5 h-5 bg-white rounded-full absolute top-0.5 transition-transform ${
-                tokenData.transferable ? "translate-x-6" : "translate-x-0.5"
-              }`}
-            />
-          </button>
-        </div>
+                <div>
+                  <label className="block text-sm font-medium mb-2" style={{ color: colors.text }}>
+                    Total a Mintear *
+                  </label>
+                  <input
+                    type="number"
+                    value={tokenData.totalSupply}
+                    onChange={(e) => setTokenData({ ...tokenData, totalSupply: e.target.value })}
+                    placeholder="100"
+                    className="w-full p-3 border rounded-lg"
+                    style={{
+                      backgroundColor: colors.bg,
+                      borderColor: colors.border,
+                      color: colors.text,
+                    }}
+                  />
+                  <p className="text-xs mt-1" style={{ color: colors.textSecondary }}>Total de tokens que se crearán</p>
+                </div>
 
-        <div className="flex items-center justify-between">
-          <span className="text-sm font-medium" style={{ color: colors.text }}>
-            ¿Tiene vencimiento?
-          </span>
-          <button
-            onClick={() => setTokenData({ ...tokenData, hasExpiry: !tokenData.hasExpiry })}
-            className={`w-12 h-6 rounded-full ${tokenData.hasExpiry ? "bg-green-500" : "bg-gray-300"} relative transition-colors`}
-          >
-            <div
-              className={`w-5 h-5 bg-white rounded-full absolute top-0.5 transition-transform ${
-                tokenData.hasExpiry ? "translate-x-6" : "translate-x-0.5"
-              }`}
-            />
-          </button>
-        </div>
+                <div>
+                  <label className="block text-sm font-medium mb-2" style={{ color: colors.text }}>
+                    Color del Token
+                  </label>
+                  <div className="flex space-x-2">
+                    {tokenColors.map((color) => (
+                      <button
+                        key={color}
+                        onClick={() => setTokenData({ ...tokenData, color })}
+                        className={`w-10 h-10 rounded-full border-3 transition-all ${
+                          tokenData.color === color ? "border-gray-800 scale-110" : "border-gray-300 hover:scale-105"
+                        }`}
+                        style={{ backgroundColor: color }}
+                      />
+                    ))}
+                  </div>
+                </div>
 
-        {tokenData.hasExpiry && (
-          <div>
-            <label className="block text-sm font-medium mb-2" style={{ color: colors.text }}>
-              Fecha de vencimiento
-            </label>
-            <input
-              type="date"
-              value={tokenData.expiryDate}
-              onChange={(e) => setTokenData({ ...tokenData, expiryDate: e.target.value })}
-              className="w-full p-2 border rounded-lg"
-              style={{
-                backgroundColor: colors.surface,
-                borderColor: colors.border,
-                color: colors.text,
-              }}
-            />
+                <div className="flex items-center justify-between py-2">
+                  <span className="text-sm font-medium" style={{ color: colors.text }}>
+                    ¿Es transferible?
+                  </span>
+                  <button
+                    onClick={() => setTokenData({ ...tokenData, transferable: !tokenData.transferable })}
+                    className={`w-12 h-6 rounded-full ${tokenData.transferable ? "bg-green-500" : "bg-gray-300"} relative transition-colors`}
+                  >
+                    <div
+                      className={`w-5 h-5 bg-white rounded-full absolute top-0.5 transition-transform ${
+                        tokenData.transferable ? "translate-x-6" : "translate-x-0.5"
+                      }`}
+                    />
+                  </button>
+                </div>
+
+                <div className="flex items-center justify-between py-2">
+                  <span className="text-sm font-medium" style={{ color: colors.text }}>
+                    ¿Tiene vencimiento?
+                  </span>
+                  <button
+                    onClick={() => setTokenData({ ...tokenData, hasExpiry: !tokenData.hasExpiry })}
+                    className={`w-12 h-6 rounded-full ${tokenData.hasExpiry ? "bg-green-500" : "bg-gray-300"} relative transition-colors`}
+                  >
+                    <div
+                      className={`w-5 h-5 bg-white rounded-full absolute top-0.5 transition-transform ${
+                        tokenData.hasExpiry ? "translate-x-6" : "translate-x-0.5"
+                      }`}
+                    />
+                  </button>
+                </div>
+
+                {tokenData.hasExpiry && (
+                  <div>
+                    <label className="block text-sm font-medium mb-2" style={{ color: colors.text }}>
+                      Fecha de vencimiento
+                    </label>
+                    <input
+                      type="date"
+                      value={tokenData.expiryDate}
+                      onChange={(e) => setTokenData({ ...tokenData, expiryDate: e.target.value })}
+                      className="w-full p-3 border rounded-lg"
+                      style={{
+                        backgroundColor: colors.bg,
+                        borderColor: colors.border,
+                        color: colors.text,
+                      }}
+                    />
+                  </div>
+                )}
+              </div>
+              
+              {/* Right Column - User Selection */}
+              <div className="space-y-4">
+                <h3 className="text-lg font-semibold mb-4" style={{ color: colors.text }}>Usuarios Destinatarios *</h3>
+                
+                <div>
+                  <input
+                    type="text"
+                    placeholder="Buscar usuario por nombre o ID..."
+                    value={searchUser}
+                    onChange={(e) => setSearchUser(e.target.value)}
+                    className="w-full p-3 border rounded-lg"
+                    style={{
+                      backgroundColor: colors.bg,
+                      borderColor: colors.border,
+                      color: colors.text,
+                    }}
+                  />
+                </div>
+                
+                <div className="max-h-64 overflow-y-auto border rounded-lg" style={{ borderColor: colors.border }}>
+                  {filteredUsers.map((user) => {
+                    const isSelected = selectedUsers.some(u => u.id === user.id)
+                    const selectedUser = selectedUsers.find(u => u.id === user.id)
+                    return (
+                      <div
+                        key={user.id}
+                        className={`p-3 border-b hover:bg-opacity-50 ${
+                          isSelected ? 'bg-blue-50' : ''
+                        }`}
+                        style={{ 
+                          borderColor: colors.border,
+                          backgroundColor: isSelected ? (isDark ? tokenData.color + '20' : tokenData.color + '10') : 'transparent'
+                        }}
+                      >
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center flex-1">
+                            <input
+                              type="checkbox"
+                              checked={isSelected}
+                              onChange={() => handleUserToggle(user)}
+                              className="mr-3 w-4 h-4"
+                            />
+                            <div className="flex-1">
+                              <p className="font-medium text-sm" style={{ color: colors.text }}>
+                                {user.name}
+                              </p>
+                              <p className="text-xs" style={{ color: colors.textSecondary }}>
+                                ID: {user.studentId}
+                              </p>
+                            </div>
+                          </div>
+                          
+                          {isSelected && (
+                            <div className="flex items-center ml-4">
+                              <input
+                                type="number"
+                                min="1"
+                                max="100"
+                                value={selectedUser?.tokens || 1}
+                                onChange={(e) => handleUserTokenChange(user.id, parseInt(e.target.value) || 1)}
+                                className="w-16 p-1 border rounded text-center text-sm"
+                                style={{
+                                  backgroundColor: colors.surface,
+                                  borderColor: colors.border,
+                                  color: colors.text,
+                                }}
+                              />
+                              <span className="ml-2 text-xs" style={{ color: colors.textSecondary }}>tokens</span>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    )
+                  })}
+                </div>
+                
+                {selectedUsers.length > 0 && (
+                  <div className="p-3 bg-blue-50 rounded-lg border border-blue-200">
+                    <p className="text-sm text-blue-700">
+                      <strong>{selectedUsers.length}</strong> usuarios seleccionados
+                    </p>
+                    <p className="text-sm text-blue-600">
+                      Total a distribuir: <strong>{getTotalTokensToDistribute()}</strong> tokens
+                    </p>
+                  </div>
+                )}
+              </div>
+            </div>
+            
+            <div className="mt-6 pt-6 border-t flex justify-end space-x-3" style={{ borderColor: colors.border }}>
+              <button
+                onClick={onClose}
+                className="px-6 py-3 border rounded-lg font-medium hover:bg-opacity-50"
+                style={{
+                  borderColor: colors.border,
+                  color: colors.text
+                }}
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={handleCreate}
+                disabled={!tokenData.name || !tokenData.totalSupply || selectedUsers.length === 0}
+                className="px-6 py-3 text-white rounded-lg font-semibold hover:opacity-90 disabled:opacity-50 transition-opacity"
+                style={{ backgroundColor: tokenData.color }}
+              >
+                <Plus size={16} className="inline mr-2" />
+                Crear y Distribuir Tokens
+              </button>
+            </div>
           </div>
         )}
-
-        <button
-          onClick={handleCreate}
-          disabled={!tokenData.name || !tokenData.amount}
-          className="w-full py-3 text-white rounded-lg font-semibold hover:opacity-90 disabled:opacity-50"
-          style={{ backgroundColor: tokenData.color }}
-        >
-          <Plus size={16} className="inline mr-2" />
-          Crear Token
-        </button>
       </div>
-    </Modal>
+    </div>
   )
 }

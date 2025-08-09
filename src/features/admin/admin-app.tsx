@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useRef } from "react"
 import { CreateTokenModal } from "@/src/components/modals/modals"
 import {
   LayoutDashboard,
@@ -14,7 +14,6 @@ import {
   Bus,
   BookOpen,
   CreditCard,
-  Trash2,
   Edit,
   Moon,
   Sun,
@@ -37,10 +36,19 @@ export default function AdminApp() {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
   const [loadingMessage, setLoadingMessage] = useState<string | null>(null)
+  const [successMessage, setSuccessMessage] = useState<string | null>(null)
+  const [selectedUsers, setSelectedUsers] = useState<{[key: string]: {selected: boolean, tokens: number}}>({
+    "Juan Pérez": { selected: true, tokens: 5 },
+    "María García": { selected: true, tokens: 3 },
+    "Carlos López": { selected: true, tokens: 2 },
+    "Ana Martínez": { selected: true, tokens: 4 },
+    "Luis Rodríguez": { selected: true, tokens: 1 }
+  })
 
   const [formData, setFormData] = useState({
     tokenName: "",
     tokenAmount: "",
+    tokenColor: ugoColors.blue,
     adminEmail: "admin@ugo.edu",
     adminInstitution: "Universidad Nacional",
     searchUser: "",
@@ -52,6 +60,67 @@ export default function AdminApp() {
   const handleInputChange = (field: string, value: string | boolean) => {
     setFormData((prev) => ({ ...prev, [field]: value }))
   }
+
+  const handleUserToggle = (userName: string) => {
+    setSelectedUsers(prev => ({
+      ...prev,
+      [userName]: {
+        ...prev[userName],
+        selected: !prev[userName].selected
+      }
+    }))
+  }
+
+  const handleUserTokensChange = (userName: string, tokens: number) => {
+    setSelectedUsers(prev => ({
+      ...prev,
+      [userName]: {
+        ...prev[userName],
+        tokens: Math.max(1, tokens)
+      }
+    }))
+  }
+
+  const getSelectedUsersCount = () => {
+    return Object.values(selectedUsers).filter(user => user.selected).length
+  }
+
+  const getTotalTokensToDistribute = () => {
+    return Object.values(selectedUsers)
+      .filter(user => user.selected)
+      .reduce((sum, user) => sum + user.tokens, 0)
+  }
+
+  const addNewToken = (tokenData: any) => {
+    const maxId = Math.max(...tokenTypes.map(token => token.id), 0)
+    const newToken = {
+      id: maxId + 1,
+      name: tokenData.name,
+      icon: CreditCard, // Default icon for new tokens
+      color: tokenData.color,
+      active: parseInt(tokenData.amount) || 0,
+      total: parseInt(tokenData.amount) || 0
+    }
+    
+    // Debug: Log current tokens and new token
+    console.log('Current tokens:', tokenTypes.map(t => ({ id: t.id, name: t.name })))
+    console.log('Adding new token:', { id: newToken.id, name: newToken.name })
+    
+    setTokenTypes(prev => [...prev, newToken])
+  }
+
+  const updateTokenAmount = (tokenId: number, additionalAmount: number) => {
+    setTokenTypes(prev => prev.map(token => 
+      token.id === tokenId 
+        ? { 
+            ...token, 
+            active: token.active + additionalAmount,
+            total: token.total + additionalAmount
+          }
+        : token
+    ))
+  }
+
 
   // Simulate QR scanner with realistic data
   useEffect(() => {
@@ -202,12 +271,12 @@ export default function AdminApp() {
     { id: "profile", icon: User, label: "Perfil" },
   ]
 
-  const tokenTypes = [
+  const [tokenTypes, setTokenTypes] = useState([
     { id: 1, name: "Comida", icon: Utensils, color: ugoColors.red, active: 150, total: 200 },
     { id: 2, name: "Transporte", icon: Bus, color: ugoColors.orange, active: 80, total: 100 },
     { id: 3, name: "Biblioteca", icon: BookOpen, color: ugoColors.blue, active: 45, total: 50 },
     { id: 4, name: "Acceso", icon: CreditCard, color: ugoColors.green, active: 120, total: 150 },
-  ]
+  ])
 
   const recentActivity = [
     { id: 1, action: "Token usado", user: "Juan Pérez", token: "Comida", time: "10:30 AM" },
@@ -243,16 +312,25 @@ export default function AdminApp() {
     const actions = {
       'configure': `Configurando ${tokenName}...`,
       'create': 'Creando nuevo token...',
-      'edit': `Editando ${tokenName}...`,
+      'edit': `Cargando configuración de ${tokenName}...`,
       'delete': `Eliminando ${tokenName}...`
     }
     setLoadingMessage(actions[action as keyof typeof actions] || 'Procesando...')
     
     await new Promise(resolve => setTimeout(resolve, 1000))
     
-    if (action === 'configure') {
+    if (action === 'configure' || action === 'edit') {
       const token = tokenTypes.find(t => t.name === tokenName)
-      if (token) setSelectedTokenType(token)
+      if (token) {
+        // Clear form first for edit mode
+        setFormData(prev => ({
+          ...prev,
+          tokenName: "",
+          tokenAmount: "",
+          searchUser: ""
+        }))
+        setSelectedTokenType(token)
+      }
     }
     
     setIsLoading(false)
@@ -316,176 +394,378 @@ export default function AdminApp() {
     </div>
   )
 
-  if (selectedTokenType) {
+  // Token Configuration Component (unified but simplified)
+  const TokenConfigView = ({ token, isNewToken = false }: { token: any, isNewToken?: boolean }) => {
+    const nameInputRef = useRef<HTMLInputElement>(null)
+    const amountInputRef = useRef<HTMLInputElement>(null)
+    const searchInputRef = useRef<HTMLInputElement>(null)
+    
     return (
-      <div className="min-h-screen" style={{ backgroundColor: colors.bg }}>
-        <div className="shadow-sm p-6 border-b" style={{ backgroundColor: colors.surface, borderColor: colors.border }}>
-          <div className="flex items-center justify-between">
-            <div className="flex items-center">
-              <button
-                onClick={() => setSelectedTokenType(null)}
-                className="mr-4 hover:opacity-70"
-                style={{ color: colors.text }}
-              >
-                ← Volver
-              </button>
-              <selectedTokenType.icon size={24} style={{ color: selectedTokenType.color }} className="mr-3" />
+    <div className="min-h-screen" style={{ backgroundColor: colors.bg }}>
+      <div className="shadow-sm p-6 border-b" style={{ backgroundColor: colors.surface, borderColor: colors.border }}>
+        <div className="flex items-center justify-between">
+          <div className="flex items-center">
+            <button
+              onClick={() => {
+                setSelectedTokenType(null)
+                setShowCreateTokenModal(false)
+                if (successMessage) setSuccessMessage(null)
+              }}
+              className="mr-4 hover:opacity-70"
+              style={{ color: colors.text }}
+            >
+              ← Volver
+            </button>
+            {!isNewToken && token && <token.icon size={24} style={{ color: token.color }} className="mr-3" />}
+            <div>
               <h1 className="text-2xl font-bold" style={{ color: colors.text }}>
-                Configurar {selectedTokenType.name}
+                {isNewToken ? "Crear Nuevo Token" : `Configurar ${token?.name}`}
               </h1>
-            </div>
-          </div>
-        </div>
-
-        <div className="p-6">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <div className="p-6 rounded-lg shadow-sm" style={{ backgroundColor: colors.surface }}>
-              <h2 className="text-lg font-semibold mb-4" style={{ color: colors.text }}>
-                Configuración del Token
-              </h2>
-              <div className="space-y-4">
-                <div>
-                  <label className="block text-sm font-medium mb-2" style={{ color: colors.text }}>
-                    Nombre del Token
-                  </label>
-                  <input
-                    type="text"
-                    value={formData.tokenName || selectedTokenType.name}
-                    onChange={(e) => handleInputChange("tokenName", e.target.value)}
-                    className="w-full p-2 border rounded-lg"
-                    style={{
-                      backgroundColor: colors.bg,
-                      borderColor: colors.border,
-                      color: colors.text,
-                    }}
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium mb-2" style={{ color: colors.text }}>
-                    Cantidad a crear
-                  </label>
-                  <input
-                    type="number"
-                    placeholder="100"
-                    value={formData.tokenAmount}
-                    onChange={(e) => handleInputChange("tokenAmount", e.target.value)}
-                    className="w-full p-2 border rounded-lg"
-                    style={{
-                      backgroundColor: colors.bg,
-                      borderColor: colors.border,
-                      color: colors.text,
-                    }}
-                  />
-                </div>
-                <div className="flex items-center justify-between">
-                  <span className="text-sm font-medium" style={{ color: colors.text }}>
-                    ¿Es transferible?
-                  </span>
-                  <button
-                    onClick={() => handleInputChange("isTransferable", !formData.isTransferable)}
-                    className={`w-12 h-6 rounded-full ${formData.isTransferable ? "bg-green-500" : "bg-gray-300"} relative transition-colors`}
-                  >
-                    <div
-                      className={`w-5 h-5 bg-white rounded-full absolute top-0.5 transition-transform ${
-                        formData.isTransferable ? "translate-x-6" : "translate-x-0.5"
-                      }`}
-                    />
-                  </button>
-                </div>
-                <div className="flex items-center justify-between">
-                  <span className="text-sm font-medium" style={{ color: colors.text }}>
-                    ¿Tiene vencimiento?
-                  </span>
-                  <button
-                    onClick={() => handleInputChange("hasExpiry", !formData.hasExpiry)}
-                    className={`w-12 h-6 rounded-full ${formData.hasExpiry ? "bg-green-500" : "bg-gray-300"} relative transition-colors`}
-                  >
-                    <div
-                      className={`w-5 h-5 bg-white rounded-full absolute top-0.5 transition-transform ${
-                        formData.hasExpiry ? "translate-x-6" : "translate-x-0.5"
-                      }`}
-                    />
-                  </button>
-                </div>
-                {formData.hasExpiry && (
-                  <div>
-                    <label className="block text-sm font-medium mb-2" style={{ color: colors.text }}>
-                      Fecha de vencimiento
-                    </label>
-                    <input
-                      type="date"
-                      value={formData.expiryDate}
-                      onChange={(e) => handleInputChange("expiryDate", e.target.value)}
-                      className="w-full p-2 border rounded-lg"
-                      style={{
-                        backgroundColor: colors.bg,
-                        borderColor: colors.border,
-                        color: colors.text,
-                      }}
-                    />
-                  </div>
-                )}
-              </div>
-            </div>
-
-            <div className="p-6 rounded-lg shadow-sm" style={{ backgroundColor: colors.surface }}>
-              <h2 className="text-lg font-semibold mb-4" style={{ color: colors.text }}>
-                Usuarios Destinatarios
-              </h2>
-              <div className="mb-4">
-                <div className="flex gap-2">
-                  <input
-                    type="text"
-                    placeholder="Buscar usuario o wallet..."
-                    value={formData.searchUser}
-                    onChange={(e) => handleInputChange("searchUser", e.target.value)}
-                    className="flex-1 p-2 border rounded-lg"
-                    style={{
-                      backgroundColor: colors.bg,
-                      borderColor: colors.border,
-                      color: colors.text,
-                    }}
-                  />
-                  <button className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600">
-                    <Search size={16} />
-                  </button>
-                </div>
-              </div>
-
-              <div className="space-y-2 max-h-64 overflow-y-auto">
-                {["Juan Pérez", "María García", "Carlos López", "Ana Martínez", "Luis Rodríguez"].map((user, index) => (
-                  <div
-                    key={index}
-                    className="flex items-center justify-between p-2 border rounded"
-                    style={{ borderColor: colors.border }}
-                  >
-                    <div className="flex items-center">
-                      <input type="checkbox" className="mr-3" defaultChecked />
-                      <span className="text-sm" style={{ color: colors.text }}>
-                        {user}
-                      </span>
-                    </div>
-                    <span className="text-xs" style={{ color: colors.textSecondary }}>
-                      ID: 202400{index + 1}
-                    </span>
-                  </div>
-                ))}
-              </div>
-
-              <div className="mt-6 pt-4 border-t" style={{ borderColor: colors.border }}>
-                <button
-                  onClick={() => alert("Tokens creados y distribuidos exitosamente")}
-                  className="w-full py-3 text-white rounded-lg font-semibold hover:opacity-90"
-                  style={{ backgroundColor: selectedTokenType.color }}
-                >
-                  Crear y Distribuir Tokens
-                </button>
-              </div>
+              <p className="text-sm mt-1" style={{ color: colors.textSecondary }}>
+                {isNewToken ? "Crear y distribuir tokens a usuarios específicos" : "Aumentar y distribuir tokens existentes"}
+              </p>
             </div>
           </div>
         </div>
       </div>
+
+      <div className="p-6">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <div className="p-6 rounded-lg shadow-sm" style={{ backgroundColor: colors.surface }}>
+            <h2 className="text-lg font-semibold mb-4" style={{ color: colors.text }}>
+              Configuración del Token
+            </h2>
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium mb-2" style={{ color: colors.text }}>
+                  Nombre del Token {isNewToken && "*"}
+                </label>
+                <input
+                  key={`name-${isNewToken ? 'create' : 'edit'}`}
+                  ref={nameInputRef}
+                  type="text"
+                  value={isNewToken ? (formData.tokenName || "") : (token?.name || "")}
+                  onChange={(e) => isNewToken ? handleInputChange("tokenName", e.target.value) : undefined}
+                  placeholder={isNewToken ? "Ej: Comida, Transporte, Biblioteca" : ""}
+                  disabled={!isNewToken}
+                  className={`w-full p-3 border rounded-lg ${!isNewToken ? 'disabled:bg-gray-100 disabled:text-gray-600' : ''}`}
+                  style={{
+                    backgroundColor: isNewToken ? colors.bg : colors.surface,
+                    borderColor: colors.border,
+                    color: colors.text,
+                  }}
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium mb-2" style={{ color: colors.text }}>
+                  {isNewToken ? "Total a Mintear *" : "Aumentar Cantidad de Tokens *"}
+                </label>
+                <input
+                  key={`amount-${isNewToken ? 'create' : 'edit'}`}
+                  ref={amountInputRef}
+                  type="number"
+                  placeholder={isNewToken ? "100" : "Cantidad a agregar"}
+                  value={formData.tokenAmount || ""}
+                  onChange={(e) => handleInputChange("tokenAmount", e.target.value)}
+                  min="1"
+                  className="w-full p-3 border rounded-lg"
+                  style={{
+                    backgroundColor: colors.bg,
+                    borderColor: colors.border,
+                    color: colors.text,
+                  }}
+                />
+                {!isNewToken && token && (
+                  <p className="text-xs mt-1" style={{ color: colors.textSecondary }}>
+                    Actualmente: {token.active} de {token.total} tokens disponibles
+                  </p>
+                )}
+              </div>
+
+              {isNewToken && (
+                <>
+                  <div>
+                    <label className="block text-sm font-medium mb-2" style={{ color: colors.text }}>
+                      Color del Token
+                    </label>
+                    <div className="flex space-x-2">
+                      {[ugoColors.red, ugoColors.orange, ugoColors.blue, ugoColors.green].map((color) => (
+                        <button
+                          key={color}
+                          onClick={() => handleInputChange("tokenColor", color)}
+                          className={`w-10 h-10 rounded-full border-3 transition-all ${
+                            (formData.tokenColor || ugoColors.blue) === color ? "border-gray-800 scale-110" : "border-gray-300 hover:scale-105"
+                          }`}
+                          style={{ backgroundColor: color }}
+                        />
+                      ))}
+                    </div>
+                  </div>
+
+                  <div className="flex items-center justify-between py-2">
+                    <span className="text-sm font-medium" style={{ color: colors.text }}>
+                      ¿Es transferible?
+                    </span>
+                    <button
+                      onClick={() => handleInputChange("isTransferable", !formData.isTransferable)}
+                      className={`w-12 h-6 rounded-full ${formData.isTransferable ? "bg-green-500" : "bg-gray-300"} relative transition-colors`}
+                    >
+                      <div
+                        className={`w-5 h-5 bg-white rounded-full absolute top-0.5 transition-transform ${
+                          formData.isTransferable ? "translate-x-6" : "translate-x-0.5"
+                        }`}
+                      />
+                    </button>
+                  </div>
+
+                  <div className="flex items-center justify-between py-2">
+                    <span className="text-sm font-medium" style={{ color: colors.text }}>
+                      ¿Tiene vencimiento?
+                    </span>
+                    <button
+                      onClick={() => handleInputChange("hasExpiry", !formData.hasExpiry)}
+                      className={`w-12 h-6 rounded-full ${formData.hasExpiry ? "bg-green-500" : "bg-gray-300"} relative transition-colors`}
+                    >
+                      <div
+                        className={`w-5 h-5 bg-white rounded-full absolute top-0.5 transition-transform ${
+                          formData.hasExpiry ? "translate-x-6" : "translate-x-0.5"
+                        }`}
+                      />
+                    </button>
+                  </div>
+
+                  {formData.hasExpiry && (
+                    <div>
+                      <label className="block text-sm font-medium mb-2" style={{ color: colors.text }}>
+                        Fecha de vencimiento
+                      </label>
+                      <input
+                        type="date"
+                        value={formData.expiryDate}
+                        onChange={(e) => handleInputChange("expiryDate", e.target.value)}
+                        className="w-full p-3 border rounded-lg"
+                        style={{
+                          backgroundColor: colors.bg,
+                          borderColor: colors.border,
+                          color: colors.text,
+                        }}
+                      />
+                    </div>
+                  )}
+                </>
+              )}
+            </div>
+          </div>
+
+          <div className="p-6 rounded-lg shadow-sm" style={{ backgroundColor: colors.surface }}>
+            <h2 className="text-lg font-semibold mb-4" style={{ color: colors.text }}>
+              Usuarios Destinatarios {isNewToken && "*"}
+            </h2>
+            <div className="mb-4">
+              <div className="flex gap-2">
+                <input
+                  key={`search-${isNewToken ? 'create' : 'edit'}`}
+                  ref={searchInputRef}
+                  type="text"
+                  placeholder="Buscar usuario por nombre o ID..."
+                  value={formData.searchUser || ""}
+                  onChange={(e) => handleInputChange("searchUser", e.target.value)}
+                  className="flex-1 p-3 border rounded-lg"
+                  style={{
+                    backgroundColor: colors.bg,
+                    borderColor: colors.border,
+                    color: colors.text,
+                  }}
+                />
+                <button 
+                  onClick={() => {
+                    if (formData.searchUser?.trim()) {
+                      setSuccessMessage(`Buscando usuario: "${formData.searchUser}"`)
+                      setTimeout(() => setSuccessMessage(null), 3000)
+                    }
+                  }}
+                  className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600"
+                  title="Buscar usuario"
+                >
+                  <Search size={16} />
+                </button>
+              </div>
+            </div>
+
+            <div className="space-y-2 max-h-64 overflow-y-auto">
+              {[
+                { name: "Juan Pérez", id: "20240001" },
+                { name: "María García", id: "20240002" },
+                { name: "Carlos López", id: "20240003" },
+                { name: "Ana Martínez", id: "20240004" },
+                { name: "Luis Rodríguez", id: "20240005" }
+              ].map((user, index) => {
+                const userState = selectedUsers[user.name]
+                const isSelected = userState?.selected || false
+                const tokenColor = isNewToken ? (formData.tokenColor || ugoColors.blue) : (token?.color || ugoColors.blue)
+                return (
+                  <div
+                    key={index}
+                    className={`flex items-center justify-between p-3 border rounded hover:bg-opacity-50 transition-all ${
+                      isSelected ? 'bg-blue-50 border-blue-200' : ''
+                    }`}
+                    style={{ 
+                      borderColor: isSelected ? (tokenColor || colors.border) : colors.border,
+                      backgroundColor: isSelected ? (isDark ? tokenColor + '20' : tokenColor + '10') : 'transparent'
+                    }}
+                  >
+                    <div className="flex items-center flex-1">
+                      <input 
+                        type="checkbox" 
+                        className="mr-3 w-4 h-4" 
+                        checked={isSelected}
+                        onChange={() => handleUserToggle(user.name)}
+                      />
+                      <div className="flex-1">
+                        <span className="text-sm font-medium" style={{ color: colors.text }}>
+                          {user.name}
+                        </span>
+                        <p className="text-xs" style={{ color: colors.textSecondary }}>
+                          ID: {user.id}
+                        </p>
+                      </div>
+                    </div>
+                    {isSelected && (
+                      <div className="flex items-center ml-4">
+                        <input
+                          type="number"
+                          min="1"
+                          max="100"
+                          value={userState?.tokens || 1}
+                          onChange={(e) => handleUserTokensChange(user.name, parseInt(e.target.value) || 1)}
+                          className="w-16 p-1 border rounded text-center text-sm"
+                          style={{
+                            backgroundColor: colors.surface,
+                            borderColor: colors.border,
+                            color: colors.text,
+                          }}
+                        />
+                        <span className="ml-2 text-xs" style={{ color: colors.textSecondary }}>tokens</span>
+                      </div>
+                    )}
+                  </div>
+                )
+              })}
+            </div>
+
+            {/* Resumen de distribución */}
+            <div className={`mt-4 p-3 rounded-lg border ${getSelectedUsersCount() > 0 ? 'bg-blue-50 border-blue-200' : 'bg-gray-50 border-gray-200'}`}>
+              <p className={`text-sm ${getSelectedUsersCount() > 0 ? 'text-blue-700' : 'text-gray-600'}`}>
+                <strong>{getSelectedUsersCount()}</strong> usuarios seleccionados
+              </p>
+              <p className={`text-sm ${getSelectedUsersCount() > 0 ? 'text-blue-600' : 'text-gray-500'}`}>
+                Total a distribuir: <strong>{getTotalTokensToDistribute()}</strong> tokens
+              </p>
+            </div>
+
+            {/* Mensaje de éxito */}
+            {successMessage && (
+              <div className="mt-4 p-4 bg-green-50 border border-green-200 rounded-lg">
+                <div className="flex items-center">
+                  <svg className="w-5 h-5 text-green-600 mr-2" fill="currentColor" viewBox="0 0 20 20">
+                    <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                  </svg>
+                  <p className="text-sm text-green-700 font-medium">{successMessage}</p>
+                </div>
+              </div>
+            )}
+
+            <div className="mt-6 pt-4 border-t" style={{ borderColor: colors.border }}>
+              <button
+                onClick={async () => {
+                  if (isNewToken && (!formData.tokenName || !formData.tokenAmount)) {
+                    setSuccessMessage("Por favor completa todos los campos requeridos")
+                    setTimeout(() => setSuccessMessage(null), 3000)
+                    return
+                  }
+                  if (!isNewToken && !formData.tokenAmount) {
+                    setSuccessMessage("Por favor ingresa la cantidad de tokens a agregar")
+                    setTimeout(() => setSuccessMessage(null), 3000)
+                    return
+                  }
+                  if (getSelectedUsersCount() === 0) {
+                    setSuccessMessage("Por favor selecciona al menos un usuario")
+                    setTimeout(() => setSuccessMessage(null), 3000)
+                    return
+                  }
+
+                  setIsLoading(true)
+                  setSuccessMessage(null)
+                  
+                  if (isNewToken) {
+                    setLoadingMessage('Creando token y distribuyendo...')
+                    await new Promise(resolve => setTimeout(resolve, 2500))
+                    
+                    // Create new token
+                    const tokenData = {
+                      name: formData.tokenName,
+                      color: formData.tokenColor || ugoColors.blue,
+                      amount: formData.tokenAmount
+                    }
+                    addNewToken(tokenData)
+                    
+                    setSuccessMessage(`Token "${formData.tokenName}" creado y ${getTotalTokensToDistribute()} tokens distribuidos a ${getSelectedUsersCount()} usuarios`)
+                    
+                    // Reset form
+                    setFormData(prev => ({
+                      ...prev,
+                      tokenName: "",
+                      tokenAmount: "",
+                      tokenColor: ugoColors.blue,
+                      searchUser: ""
+                    }))
+                  } else {
+                    setLoadingMessage('Aumentando tokens y distribuyendo...')
+                    await new Promise(resolve => setTimeout(resolve, 2500))
+                    
+                    // Update existing token amount
+                    const additionalAmount = parseInt(formData.tokenAmount) || 0
+                    updateTokenAmount(token.id, additionalAmount)
+                    
+                    setSuccessMessage(`${additionalAmount} tokens agregados al suministro. ${getTotalTokensToDistribute()} tokens distribuidos a ${getSelectedUsersCount()} usuarios`)
+                    
+                    // Reset amount field
+                    setFormData(prev => ({
+                      ...prev,
+                      tokenAmount: "",
+                      searchUser: ""
+                    }))
+                  }
+                  
+                  setIsLoading(false)
+                  setLoadingMessage(null)
+                  
+                  // Auto-hide success message after 5 seconds
+                  setTimeout(() => {
+                    setSuccessMessage(null)
+                  }, 5000)
+                }}
+                disabled={getSelectedUsersCount() === 0 || (isNewToken && (!formData.tokenName || !formData.tokenAmount)) || (!isNewToken && !formData.tokenAmount)}
+                className="w-full py-3 text-white rounded-lg font-semibold hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed"
+                style={{ backgroundColor: isNewToken ? (formData.tokenColor || ugoColors.blue) : (token?.color || ugoColors.blue) }}
+              >
+                {isNewToken ? "Crear y Distribuir Tokens" : `Aumentar y Distribuir (+${formData.tokenAmount || 0})`}
+                {getSelectedUsersCount() > 0 && ` a ${getSelectedUsersCount()} usuarios`}
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
     )
+  }
+
+  if (showCreateTokenModal) {
+    return <TokenConfigView token={null} isNewToken={true} />
+  }
+
+  if (selectedTokenType) {
+    return <TokenConfigView token={selectedTokenType} isNewToken={false} />
   }
 
   const renderContent = () => {
@@ -865,7 +1145,17 @@ export default function AdminApp() {
                 Gestión de Tokens
               </h1>
               <button
-                onClick={() => handleTokenAction('create', 'nuevo')}
+                onClick={() => {
+                  // Clear form for new token creation
+                  setFormData(prev => ({
+                    ...prev,
+                    tokenName: "",
+                    tokenAmount: "",
+                    tokenColor: ugoColors.blue,
+                    searchUser: ""
+                  }))
+                  setShowCreateTokenModal(true)
+                }}
                 className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 flex items-center"
               >
                 <Plus size={16} className="mr-2" />
@@ -890,11 +1180,13 @@ export default function AdminApp() {
                         </h3>
                       </div>
                       <div className="flex space-x-2">
-                        <button className="hover:opacity-70" style={{ color: colors.textSecondary }}>
+                        <button 
+                          onClick={() => handleTokenAction('edit', token.name)}
+                          className="hover:opacity-70" 
+                          style={{ color: colors.textSecondary }}
+                          title="Editar configuración"
+                        >
                           <Edit size={16} />
-                        </button>
-                        <button className="text-red-500 hover:text-red-700">
-                          <Trash2 size={16} />
                         </button>
                       </div>
                     </div>
@@ -932,7 +1224,6 @@ export default function AdminApp() {
               })}
             </div>
 
-            <CreateTokenModal isOpen={showCreateTokenModal} onClose={() => setShowCreateTokenModal(false)} />
           </div>
         )
 
