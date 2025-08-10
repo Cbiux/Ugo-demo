@@ -135,7 +135,7 @@ src/
 
 ```bash
 # Clonar el repositorio del prototipo
-git clone https://github.com/tu-usuario/ugo-tokens-prototype.git
+git clone https://github.com/Cbiux/Ugo-demo.git
 cd ugo-tokens-prototype
 
 # Instalar dependencias
