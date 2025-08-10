@@ -20,18 +20,18 @@ function Modal({ isOpen, onClose, children, title }: ModalProps) {
   if (!isOpen) return null
 
   return (
-    <div className="absolute inset-0 z-50 flex items-center justify-center">
+    <div className="absolute inset-0 z-50 flex items-center justify-center p-4">
       <div className="absolute inset-0 bg-black bg-opacity-60 rounded-[2rem]" onClick={onClose} />
-      <div className="relative w-full max-w-sm mx-4 rounded-xl shadow-xl" style={{ backgroundColor: colors.surface }}>
-        <div className="flex items-center justify-between p-4 border-b" style={{ borderColor: colors.border }}>
-          <h2 className="text-lg font-semibold" style={{ color: colors.text }}>
+      <div className="relative w-full max-w-xs max-h-[85%] overflow-y-auto rounded-xl shadow-xl" style={{ backgroundColor: colors.surface }}>
+        <div className="flex items-center justify-between p-3 border-b" style={{ borderColor: colors.border }}>
+          <h2 className="text-base font-semibold" style={{ color: colors.text }}>
             {title}
           </h2>
-          <button onClick={onClose} className="text-gray-500 hover:text-gray-700">
-            <X size={20} />
+          <button onClick={onClose} className="text-gray-500 hover:text-gray-700 p-1 hover:bg-gray-100 rounded-full transition-colors">
+            <X size={18} />
           </button>
         </div>
-        <div className="p-4">{children}</div>
+        <div className="p-3">{children}</div>
       </div>
     </div>
   )
@@ -343,75 +343,82 @@ export function ReceiveModal({
 
   return (
     <Modal isOpen={isOpen} onClose={onClose} title="Recibir Tokens">
-      <div className="text-center space-y-6">
+      <div className="text-center space-y-3">
         {/* QR Code Display */}
         <div className="relative flex justify-center">
-          <div className="w-52 h-52 bg-white border-2 border-gray-200 rounded-xl flex items-center justify-center shadow-inner relative">
-            <QrCode size={160} className="text-gray-800" />
+          <div className="w-32 h-32 bg-white border-2 border-gray-200 rounded-lg flex items-center justify-center shadow-inner relative">
+            <QrCode size={100} className="text-gray-800" />
             {/* QR Code corners */}
-            <div className="absolute top-2 left-2 w-4 h-4 border-l-3 border-t-3 border-blue-500 rounded-tl"></div>
-            <div className="absolute top-2 right-2 w-4 h-4 border-r-3 border-t-3 border-blue-500 rounded-tr"></div>
-            <div className="absolute bottom-2 left-2 w-4 h-4 border-l-3 border-b-3 border-blue-500 rounded-bl"></div>
-            <div className="absolute bottom-2 right-2 w-4 h-4 border-r-3 border-b-3 border-blue-500 rounded-br"></div>
+            <div className="absolute top-1 left-1 w-3 h-3 border-l-2 border-t-2 border-blue-500 rounded-tl"></div>
+            <div className="absolute top-1 right-1 w-3 h-3 border-r-2 border-t-2 border-blue-500 rounded-tr"></div>
+            <div className="absolute bottom-1 left-1 w-3 h-3 border-l-2 border-b-2 border-blue-500 rounded-bl"></div>
+            <div className="absolute bottom-1 right-1 w-3 h-3 border-r-2 border-b-2 border-blue-500 rounded-br"></div>
           </div>
         </div>
 
         {/* Wallet Address */}
-        <div className="space-y-3">
+        <div className="space-y-2">
           <div>
-            <p className="text-sm font-medium mb-2" style={{ color: colors.text }}>
+            <p className="text-xs font-medium mb-1" style={{ color: colors.text }}>
               Tu dirección de wallet
             </p>
             <div 
-              className="flex items-center justify-between p-3 rounded-lg border transition-colors"
+              className="flex items-center justify-between p-2 rounded-lg border transition-colors"
               style={{ 
                 backgroundColor: colors.bg, 
                 borderColor: copied ? '#10B981' : colors.border 
               }}
             >
-              <span className="text-sm font-mono flex-1 text-left" style={{ color: colors.text }}>
+              <span className="text-xs font-mono flex-1 text-left" style={{ color: colors.text }}>
                 {displayAddress}
               </span>
               <button 
                 onClick={handleCopy}
-                className={`ml-3 p-2 rounded-lg transition-colors ${
+                className={`ml-2 p-1 rounded transition-colors ${
                   copied ? 'text-green-600 bg-green-100' : 'text-blue-500 hover:bg-blue-50'
                 }`}
               >
                 {copied ? (
-                  <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                  <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
                     <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
                   </svg>
                 ) : (
-                  <Copy size={16} />
+                  <Copy size={12} />
                 )}
               </button>
             </div>
             {copied && (
               <p className="text-xs text-green-600 mt-1 animate-fade-in">
-                ¡Dirección copiada al portapapeles!
+                ¡Copiada!
               </p>
             )}
           </div>
         </div>
 
         {/* Instructions */}
-        <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-          <h4 className="font-semibold text-blue-800 mb-2">¿Cómo recibir tokens?</h4>
-          <div className="text-left space-y-1 text-sm text-blue-700">
-            <p>• Muestra este código QR al remitente</p>
-            <p>• O comparte tu dirección de wallet</p>
-            <p>• Los tokens aparecerán en tu billetera</p>
+        <div className="bg-blue-50 border border-blue-200 rounded-lg p-2">
+          <h4 className="font-semibold text-blue-800 mb-1 text-xs">¿Cómo recibir?</h4>
+          <div className="text-left space-y-0.5 text-xs text-blue-700">
+            <p>• Muestra este QR</p>
+            <p>• Comparte tu wallet</p>
           </div>
         </div>
+        
+        {/* Close Button */}
+        <button
+          onClick={onClose}
+          className="w-full py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg font-medium transition-colors text-sm"
+        >
+          Cerrar
+        </button>
 
         {/* Profile Info */}
-        <div className="flex items-center justify-center space-x-2 pt-2 border-t" style={{ borderColor: colors.border }}>
-          <div className="w-8 h-8 bg-gray-300 rounded-full flex items-center justify-center">
+        <div className="flex items-center justify-center space-x-2 pt-1 border-t" style={{ borderColor: colors.border }}>
+          <div className="w-6 h-6 bg-gray-300 rounded-full flex items-center justify-center">
             <span className="text-xs font-bold text-gray-600">JP</span>
           </div>
           <div className="text-left">
-            <p className="font-medium text-sm" style={{ color: colors.text }}>Juan Pérez</p>
+            <p className="font-medium text-xs" style={{ color: colors.text }}>Juan Pérez</p>
             <p className="text-xs" style={{ color: colors.textSecondary }}>ID: 2024001234</p>
           </div>
         </div>

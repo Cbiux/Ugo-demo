@@ -44,6 +44,9 @@ export default function AdminApp() {
     "Ana Martínez": { selected: true, tokens: 4 },
     "Luis Rodríguez": { selected: true, tokens: 1 }
   })
+  const [isProfileEditing, setIsProfileEditing] = useState(false)
+  const [profileSaved, setProfileSaved] = useState(false)
+  const [showNotifications, setShowNotifications] = useState(false)
 
   const [formData, setFormData] = useState({
     tokenName: "",
@@ -396,9 +399,6 @@ export default function AdminApp() {
 
   // Token Configuration Component (unified but simplified)
   const TokenConfigView = ({ token, isNewToken = false }: { token: any, isNewToken?: boolean }) => {
-    const nameInputRef = useRef<HTMLInputElement>(null)
-    const amountInputRef = useRef<HTMLInputElement>(null)
-    const searchInputRef = useRef<HTMLInputElement>(null)
     
     return (
     <div className="min-h-screen" style={{ backgroundColor: colors.bg }}>
@@ -441,8 +441,6 @@ export default function AdminApp() {
                   Nombre del Token {isNewToken && "*"}
                 </label>
                 <input
-                  key={`name-${isNewToken ? 'create' : 'edit'}`}
-                  ref={nameInputRef}
                   type="text"
                   value={isNewToken ? (formData.tokenName || "") : (token?.name || "")}
                   onChange={(e) => isNewToken ? handleInputChange("tokenName", e.target.value) : undefined}
@@ -461,8 +459,6 @@ export default function AdminApp() {
                   {isNewToken ? "Total a Mintear *" : "Aumentar Cantidad de Tokens *"}
                 </label>
                 <input
-                  key={`amount-${isNewToken ? 'create' : 'edit'}`}
-                  ref={amountInputRef}
                   type="number"
                   placeholder={isNewToken ? "100" : "Cantidad a agregar"}
                   value={formData.tokenAmount || ""}
@@ -564,8 +560,6 @@ export default function AdminApp() {
             <div className="mb-4">
               <div className="flex gap-2">
                 <input
-                  key={`search-${isNewToken ? 'create' : 'edit'}`}
-                  ref={searchInputRef}
                   type="text"
                   placeholder="Buscar usuario por nombre o ID..."
                   value={formData.searchUser || ""}
@@ -870,16 +864,19 @@ export default function AdminApp() {
 
       case "scanner":
         return (
-          <div className="p-4 h-[calc(100vh-120px)]" style={{ backgroundColor: colors.bg }}>
-            <h1 className="text-2xl font-bold mb-4" style={{ color: colors.text }}>
-              Escáner QR - Validación de Tokens
-            </h1>
+          <div className="p-6" style={{ backgroundColor: colors.bg }}>
+            <div className="mb-6">
+              <h1 className="text-3xl font-bold mb-2" style={{ color: colors.text }}>
+                Escáner QR
+              </h1>
+              <p style={{ color: colors.textSecondary }}>Validación de tokens estudiantiles</p>
+            </div>
 
-            <div className="grid grid-cols-2 gap-6 h-[calc(100%-60px)]">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
               {/* Panel Izquierdo - Scanner */}
-              <div className="p-6 rounded-lg shadow-sm flex flex-col" style={{ backgroundColor: colors.surface }}>
-                <div className="text-center mb-4">
-                  <h2 className="text-lg font-semibold mb-2" style={{ color: colors.text }}>
+              <div className="p-6 rounded-lg shadow-sm" style={{ backgroundColor: colors.surface }}>
+                <div className="text-center mb-6">
+                  <h2 className="text-xl font-semibold mb-3" style={{ color: colors.text }}>
                     {scannerActive ? "🔍 Escaneando..." : "📱 Listo para escanear"}
                   </h2>
                   <p className="text-sm" style={{ color: colors.textSecondary }}>
@@ -888,56 +885,56 @@ export default function AdminApp() {
                 </div>
 
                 {/* Scanner Area */}
-                <div className="flex-1 flex flex-col items-center justify-center">
+                <div className="flex flex-col items-center justify-center mb-6">
                   <div
-                    className={`w-64 h-64 rounded-xl flex items-center justify-center relative border-4 transition-all duration-300 ${
+                    className={`w-80 h-80 rounded-2xl flex items-center justify-center relative border-4 transition-all duration-300 ${
                       scannerActive ? "border-blue-500 shadow-lg shadow-blue-200" : "border-gray-300"
                     }`}
                     style={{ backgroundColor: colors.bg }}
                   >
-                    <QrCode size={120} className={scannerActive ? "text-blue-500" : "text-gray-400"} />
+                    <QrCode size={160} className={scannerActive ? "text-blue-500" : "text-gray-400"} />
                     {scannerActive && (
                       <>
                         {/* Scanning line */}
-                        <div className="absolute inset-x-4 h-0.5 bg-gradient-to-r from-transparent via-green-400 to-transparent animate-ping"
+                        <div className="absolute inset-x-6 h-1 bg-gradient-to-r from-transparent via-green-400 to-transparent animate-ping"
                              style={{ top: '45%' }}></div>
                         {/* Corner brackets */}
-                        <div className="absolute top-2 left-2 w-6 h-6 border-t-3 border-l-3 border-green-400 rounded-tl-lg animate-pulse"></div>
-                        <div className="absolute top-2 right-2 w-6 h-6 border-t-3 border-r-3 border-green-400 rounded-tr-lg animate-pulse" style={{ animationDelay: '0.2s' }}></div>
-                        <div className="absolute bottom-2 left-2 w-6 h-6 border-b-3 border-l-3 border-green-400 rounded-bl-lg animate-pulse" style={{ animationDelay: '0.4s' }}></div>
-                        <div className="absolute bottom-2 right-2 w-6 h-6 border-b-3 border-r-3 border-green-400 rounded-br-lg animate-pulse" style={{ animationDelay: '0.6s' }}></div>
+                        <div className="absolute top-3 left-3 w-8 h-8 border-t-3 border-l-3 border-green-400 rounded-tl-lg animate-pulse"></div>
+                        <div className="absolute top-3 right-3 w-8 h-8 border-t-3 border-r-3 border-green-400 rounded-tr-lg animate-pulse" style={{ animationDelay: '0.2s' }}></div>
+                        <div className="absolute bottom-3 left-3 w-8 h-8 border-b-3 border-l-3 border-green-400 rounded-bl-lg animate-pulse" style={{ animationDelay: '0.4s' }}></div>
+                        <div className="absolute bottom-3 right-3 w-8 h-8 border-b-3 border-r-3 border-green-400 rounded-br-lg animate-pulse" style={{ animationDelay: '0.6s' }}></div>
                       </>
                     )}
                   </div>
 
                   {/* Scanning status debajo del QR */}
                   {scannerActive && (
-                    <div className="mt-4 flex items-center">
-                      <div className="flex space-x-1 mr-2">
-                        <div className="w-2 h-2 bg-blue-500 rounded-full animate-bounce"></div>
-                        <div className="w-2 h-2 bg-blue-500 rounded-full animate-bounce" style={{ animationDelay: '0.1s' }}></div>
-                        <div className="w-2 h-2 bg-blue-500 rounded-full animate-bounce" style={{ animationDelay: '0.2s' }}></div>
+                    <div className="mt-6 flex items-center">
+                      <div className="flex space-x-2 mr-3">
+                        <div className="w-3 h-3 bg-blue-500 rounded-full animate-bounce"></div>
+                        <div className="w-3 h-3 bg-blue-500 rounded-full animate-bounce" style={{ animationDelay: '0.1s' }}></div>
+                        <div className="w-3 h-3 bg-blue-500 rounded-full animate-bounce" style={{ animationDelay: '0.2s' }}></div>
                       </div>
-                      <span className="text-blue-500 font-medium">Procesando...</span>
+                      <span className="text-blue-500 font-semibold text-lg">Procesando...</span>
                     </div>
                   )}
                 </div>
 
                 {/* Control Button */}
-                <div className="text-center mt-4">
+                <div className="text-center">
                   <button
                     onClick={() => setScannerActive(!scannerActive)}
                     disabled={scannerActive}
-                    className="px-8 py-3 bg-blue-500 text-white rounded-lg hover:bg-blue-600 disabled:opacity-50 transition-all duration-200 font-medium"
+                    className="px-8 py-4 bg-blue-500 text-white rounded-xl hover:bg-blue-600 disabled:opacity-50 transition-all duration-200 font-semibold text-lg shadow-md hover:shadow-lg"
                   >
                     {scannerActive ? (
                       <>
-                        <Clock size={18} className="inline mr-2" />
+                        <Clock size={20} className="inline mr-3" />
                         Escaneando...
                       </>
                     ) : (
                       <>
-                        <QrCode size={18} className="inline mr-2" />
+                        <QrCode size={20} className="inline mr-3" />
                         Iniciar Escáner
                       </>
                     )}
@@ -946,7 +943,7 @@ export default function AdminApp() {
               </div>
 
               {/* Panel Derecho - Información del Usuario */}
-              <div className="p-6 rounded-lg shadow-sm overflow-y-auto" style={{ backgroundColor: colors.surface }}>
+              <div className="p-6 rounded-lg shadow-sm overflow-y-auto max-h-[80vh]" style={{ backgroundColor: colors.surface }}>
                 {!lastScan ? (
                   /* Estado inicial */
                   <div className="flex flex-col items-center justify-center h-full text-center">
@@ -1229,124 +1226,233 @@ export default function AdminApp() {
 
       case "profile":
         return (
-          <div className="p-6">
-            <h1 className="text-3xl font-bold mb-6" style={{ color: colors.text }}>
-              Perfil de Administrador
-            </h1>
-
-            <div className="max-w-2xl">
-              <div className="p-6 rounded-lg shadow-sm mb-6" style={{ backgroundColor: colors.surface }}>
-                <div className="flex items-center mb-6">
-                  <div
-                    className="w-20 h-20 rounded-full flex items-center justify-center mr-6"
-                    style={{ backgroundColor: colors.bg }}
+          <div className="p-6 min-h-full" style={{ backgroundColor: colors.bg }}>
+            <div className="flex items-center justify-between mb-6">
+              <h1 className="text-3xl font-bold" style={{ color: colors.text }}>
+                Perfil de Administrador
+              </h1>
+              <div className="flex items-center space-x-2">
+                {!isProfileEditing ? (
+                  <button
+                    onClick={() => setIsProfileEditing(true)}
+                    className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 flex items-center"
                   >
-                    <User size={40} style={{ color: colors.textSecondary }} />
+                    <Edit size={16} className="mr-2" />
+                    Editar Perfil
+                  </button>
+                ) : (
+                  <>
+                    <button
+                      onClick={async () => {
+                        setIsLoading(true)
+                        setLoadingMessage('Guardando cambios del perfil...')
+                        await new Promise(resolve => setTimeout(resolve, 1500))
+                        setIsLoading(false)
+                        setLoadingMessage(null)
+                        setIsProfileEditing(false)
+                        setProfileSaved(true)
+                        setTimeout(() => setProfileSaved(false), 3000)
+                      }}
+                      className="px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 flex items-center"
+                    >
+                      <svg className="w-4 h-4 mr-2" fill="currentColor" viewBox="0 0 20 20">
+                        <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                      </svg>
+                      Guardar
+                    </button>
+                    <button
+                      onClick={() => {
+                        setIsProfileEditing(false)
+                        setProfileSaved(false)
+                      }}
+                      className="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50"
+                    >
+                      Cancelar
+                    </button>
+                  </>
+                )}
+              </div>
+            </div>
+
+            {profileSaved && (
+              <div className="mb-6 p-4 bg-green-50 border border-green-200 rounded-lg">
+                <div className="flex items-center">
+                  <svg className="w-5 h-5 text-green-600 mr-2" fill="currentColor" viewBox="0 0 20 20">
+                    <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                  </svg>
+                  <p className="text-sm text-green-700 font-medium">Perfil actualizado correctamente</p>
+                </div>
+              </div>
+            )}
+
+            <div className="max-w-4xl">
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                {/* Información Personal */}
+                <div className="p-6 rounded-lg shadow-sm" style={{ backgroundColor: colors.surface }}>
+                  <h2 className="text-xl font-semibold mb-6" style={{ color: colors.text }}>
+                    Información Personal
+                  </h2>
+                  
+                  <div className="flex items-center mb-6">
+                    <div className="relative mr-6">
+                      <div
+                        className="w-20 h-20 rounded-full flex items-center justify-center border-4"
+                        style={{ backgroundColor: colors.bg, borderColor: ugoColors.primary }}
+                      >
+                        <User size={40} style={{ color: colors.textSecondary }} />
+                      </div>
+                      {isProfileEditing && (
+                        <button className="absolute -bottom-1 -right-1 w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center text-white hover:bg-blue-600 shadow-md">
+                          <Edit size={14} />
+                        </button>
+                      )}
+                    </div>
+                    <div>
+                      <h3 className="text-2xl font-semibold mb-1" style={{ color: colors.text }}>
+                        Admin UGO
+                      </h3>
+                      <p className="mb-2" style={{ color: colors.textSecondary }}>Administrador del Sistema</p>
+                      <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-semibold bg-green-100 text-green-800">
+                        <div className="w-2 h-2 bg-green-500 rounded-full mr-2 animate-pulse"></div>
+                        En línea
+                      </span>
+                    </div>
                   </div>
-                  <div>
-                    <h2 className="text-2xl font-semibold" style={{ color: colors.text }}>
-                      Admin UGO
-                    </h2>
-                    <p style={{ color: colors.textSecondary }}>Administrador del Sistema</p>
+
+                  <div className="space-y-4">
+                    <div>
+                      <label className="block text-sm font-medium mb-2" style={{ color: colors.text }}>
+                        Email Administrativo
+                      </label>
+                      <input
+                        type="email"
+                        value={formData.adminEmail}
+                        onChange={(e) => handleInputChange("adminEmail", e.target.value)}
+                        disabled={!isProfileEditing}
+                        className={`w-full p-3 border rounded-lg ${!isProfileEditing ? 'bg-gray-50' : ''}`}
+                        style={{
+                          backgroundColor: isProfileEditing ? colors.bg : colors.surface,
+                          borderColor: colors.border,
+                          color: colors.text,
+                        }}
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium mb-2" style={{ color: colors.text }}>
+                        Institución
+                      </label>
+                      <input
+                        type="text"
+                        value={formData.adminInstitution}
+                        onChange={(e) => handleInputChange("adminInstitution", e.target.value)}
+                        disabled={!isProfileEditing}
+                        className={`w-full p-3 border rounded-lg ${!isProfileEditing ? 'bg-gray-50' : ''}`}
+                        style={{
+                          backgroundColor: isProfileEditing ? colors.bg : colors.surface,
+                          borderColor: colors.border,
+                          color: colors.text,
+                        }}
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium mb-2" style={{ color: colors.text }}>
+                        Último acceso
+                      </label>
+                      <div className="flex items-center p-3 border rounded-lg" style={{ backgroundColor: colors.bg, borderColor: colors.border }}>
+                        <Clock size={16} className="mr-2" style={{ color: colors.textSecondary }} />
+                        <span className="text-sm font-medium" style={{ color: colors.text }}>
+                          Hoy, 09:30 AM
+                        </span>
+                      </div>
+                    </div>
                   </div>
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
-                  <div>
+                {/* Seguridad y Acceso */}
+                <div className="p-6 rounded-lg shadow-sm" style={{ backgroundColor: colors.surface }}>
+                  <h2 className="text-xl font-semibold mb-6" style={{ color: colors.text }}>
+                    Seguridad y Acceso
+                  </h2>
+
+                  {/* Wallet Address */}
+                  <div className="mb-6">
                     <label className="block text-sm font-medium mb-2" style={{ color: colors.text }}>
-                      Email
-                    </label>
-                    <input
-                      type="email"
-                      value={formData.adminEmail}
-                      onChange={(e) => handleInputChange("adminEmail", e.target.value)}
-                      className="w-full p-2 border rounded-lg"
-                      style={{
-                        backgroundColor: colors.bg,
-                        borderColor: colors.border,
-                        color: colors.text,
-                      }}
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium mb-2" style={{ color: colors.text }}>
-                      Institución
-                    </label>
-                    <input
-                      type="text"
-                      value={formData.adminInstitution}
-                      onChange={(e) => handleInputChange("adminInstitution", e.target.value)}
-                      className="w-full p-2 border rounded-lg"
-                      style={{
-                        backgroundColor: colors.bg,
-                        borderColor: colors.border,
-                        color: colors.text,
-                      }}
-                    />
-                  </div>
-                  <div className="md:col-span-2">
-                    <label className="block text-sm font-medium mb-2" style={{ color: colors.text }}>
-                      Wallet Address
+                      Wallet Address Administrativo
                     </label>
                     <div
-                      className="flex items-center justify-between p-2 rounded border"
+                      className="flex items-center justify-between p-3 rounded-lg border"
                       style={{ backgroundColor: colors.bg, borderColor: colors.border }}
                     >
-                      <span className="text-sm font-mono" style={{ color: colors.text }}>
-                        GADM...A7X9
+                      <span className="text-sm font-mono flex-1" style={{ color: colors.text }}>
+                        GADM1A9E8F2C5B4D3A7X9
                       </span>
-                      <button onClick={() => copyToClipboard("GADMA7X9ADMIN")} className="text-blue-500">
+                      <button 
+                        onClick={() => {
+                          copyToClipboard("GADM1A9E8F2C5B4D3A7X9")
+                          setSuccessMessage("Wallet address copiado al portapapeles")
+                          setTimeout(() => setSuccessMessage(null), 2000)
+                        }}
+                        className="ml-2 p-2 text-blue-500 hover:bg-blue-50 rounded-lg transition-colors"
+                        title="Copiar wallet address"
+                      >
                         <Copy size={16} />
                       </button>
                     </div>
                   </div>
-                  <div>
-                    <label className="block text-sm font-medium mb-2" style={{ color: colors.text }}>
-                      Último acceso
-                    </label>
-                    <input
-                      type="text"
-                      value="Hoy, 09:30 AM"
-                      className="w-full p-2 border rounded-lg"
-                      style={{
-                        backgroundColor: colors.bg,
-                        borderColor: colors.border,
-                        color: colors.text,
-                      }}
-                      readOnly
-                    />
-                  </div>
-                </div>
 
-                {/* QR Code Section */}
-                <div
-                  className="p-4 rounded-lg border mb-6 text-center"
-                  style={{ backgroundColor: colors.bg, borderColor: colors.border }}
-                >
-                  <h3 className="font-semibold mb-4" style={{ color: colors.text }}>
-                    Mi Código QR Administrativo
-                  </h3>
+                  {/* QR Code Section */}
                   <div
-                    className="w-32 h-32 rounded-lg mx-auto mb-4 flex items-center justify-center"
-                    style={{ backgroundColor: colors.surface }}
+                    className="p-6 rounded-lg border text-center mb-6"
+                    style={{ backgroundColor: colors.bg, borderColor: colors.border }}
                   >
-                    <QrCode size={80} className="text-gray-400" />
+                    <h3 className="font-semibold mb-4" style={{ color: colors.text }}>
+                      Código QR Administrativo
+                    </h3>
+                    <div className="relative inline-block">
+                      <div
+                        className="w-32 h-32 rounded-lg mx-auto mb-4 flex items-center justify-center shadow-inner border-2"
+                        style={{ backgroundColor: colors.surface, borderColor: ugoColors.primary }}
+                      >
+                        <QrCode size={80} style={{ color: colors.text }} />
+                      </div>
+                      {/* QR corners */}
+                      <div className="absolute top-1 left-1 w-4 h-4 border-l-2 border-t-2 border-blue-500 rounded-tl"></div>
+                      <div className="absolute top-1 right-1 w-4 h-4 border-r-2 border-t-2 border-blue-500 rounded-tr"></div>
+                      <div className="absolute bottom-5 left-1 w-4 h-4 border-l-2 border-b-2 border-blue-500 rounded-bl"></div>
+                      <div className="absolute bottom-5 right-1 w-4 h-4 border-r-2 border-b-2 border-blue-500 rounded-br"></div>
+                    </div>
+                    <p className="text-sm" style={{ color: colors.textSecondary }}>
+                      Código de identificación administrativa
+                    </p>
                   </div>
-                  <p className="text-sm" style={{ color: colors.textSecondary }}>
-                    Código de identificación administrativa
-                  </p>
-                </div>
 
-                <div className="pt-6 border-t" style={{ borderColor: colors.border }}>
-                  <button className="px-6 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 mr-3">
-                    Guardar Cambios
-                  </button>
-                  <button
-                    className="px-6 py-2 border text-gray-700 rounded-lg hover:bg-gray-50"
-                    style={{ borderColor: colors.border, color: colors.text }}
-                  >
-                    Cancelar
-                  </button>
+                  {/* Security Actions */}
+                  <div className="space-y-3">
+                    <button 
+                      onClick={() => {
+                        setSuccessMessage("Token de acceso regenerado exitosamente")
+                        setTimeout(() => setSuccessMessage(null), 3000)
+                      }}
+                      className="w-full flex items-center justify-center px-4 py-2 bg-orange-500 text-white rounded-lg hover:bg-orange-600"
+                    >
+                      <svg className="w-4 h-4 mr-2" fill="currentColor" viewBox="0 0 20 20">
+                        <path fillRule="evenodd" d="M4 2a1 1 0 011 1v2.101a7.002 7.002 0 0111.601 2.566 1 1 0 11-1.885.666A5.002 5.002 0 005.999 7H9a1 1 0 010 2H4a1 1 0 01-1-1V3a1 1 0 011-1zm.008 9.057a1 1 0 011.276.61A5.002 5.002 0 0014.001 13H11a1 1 0 110-2h5a1 1 0 011 1v5a1 1 0 11-2 0v-2.101a7.002 7.002 0 01-11.601-2.566 1 1 0 01.61-1.276z" clipRule="evenodd" />
+                      </svg>
+                      Regenerar Token de Acceso
+                    </button>
+                    <button 
+                      onClick={() => {
+                        setSuccessMessage("Contraseña actualizada correctamente")
+                        setTimeout(() => setSuccessMessage(null), 3000)
+                      }}
+                      className="w-full flex items-center justify-center px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600"
+                    >
+                      <svg className="w-4 h-4 mr-2" fill="currentColor" viewBox="0 0 20 20">
+                        <path fillRule="evenodd" d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z" clipRule="evenodd" />
+                      </svg>
+                      Cambiar Contraseña
+                    </button>
+                  </div>
                 </div>
               </div>
             </div>
@@ -1359,9 +1465,12 @@ export default function AdminApp() {
   }
 
   return (
-    <div className="w-full h-full flex min-h-screen" style={{ backgroundColor: colors.bg }}>
+    <div className="w-full flex min-h-screen" style={{ backgroundColor: colors.bg }}>
       {/* Sidebar */}
-      <div className={`${sidebarCollapsed ? 'w-16' : 'w-64'} shadow-sm transition-all duration-300`} style={{ backgroundColor: colors.surface }}>
+      <div 
+        className={`${sidebarCollapsed ? 'w-16' : 'w-64'} shadow-sm transition-all duration-300 flex flex-col`} 
+        style={{ backgroundColor: colors.surface, minHeight: '100vh' }}
+      >
         <div className={`${sidebarCollapsed ? 'p-2' : 'p-6'} border-b flex items-center justify-center transition-all duration-300`} style={{ borderColor: colors.border }}>
           {!sidebarCollapsed ? (
             <img src="/assets/images/ugo-logo-new.png" alt="UGO Admin" className="h-12 transition-all duration-300" />
@@ -1370,7 +1479,7 @@ export default function AdminApp() {
           )}
         </div>
 
-        <nav className="p-4">
+        <nav className="p-4 flex-1" style={{ backgroundColor: colors.surface }}>
           <div className="space-y-2">
             {sidebarItems.map((item) => {
               const Icon = item.icon
@@ -1420,14 +1529,109 @@ export default function AdminApp() {
                 Panel de Administración UGO
               </h1>
             </div>
-            <div className="flex items-center space-x-4">
-              <button className="hover:opacity-70" style={{ color: colors.text }}>
-                <Bell size={20} />
-              </button>
-              <button className="hover:opacity-70" style={{ color: colors.text }}>
+            <div className="flex items-center space-x-2">
+              <div className="relative">
+                <button 
+                  onClick={() => setShowNotifications(!showNotifications)}
+                  className="relative p-2 rounded-lg transition-colors" 
+                  style={{ color: colors.text }}
+                  title="Notificaciones"
+                  onMouseEnter={(e) => e.currentTarget.style.backgroundColor = isDark ? colors.bg : '#f3f4f6'}
+                  onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
+                >
+                  <Bell size={20} />
+                  <div className="absolute -top-1 -right-1 w-3 h-3 bg-red-500 rounded-full flex items-center justify-center">
+                    <span className="text-white text-xs font-bold">3</span>
+                  </div>
+                </button>
+
+                {/* Notifications Popup */}
+                {showNotifications && (
+                  <>
+                    <div 
+                      className="fixed inset-0 z-40" 
+                      onClick={() => setShowNotifications(false)}
+                    ></div>
+                    <div className="absolute right-0 top-full mt-2 w-80 rounded-lg shadow-xl border z-50" style={{ backgroundColor: colors.surface, borderColor: colors.border }}>
+                    <div className="p-4 border-b" style={{ borderColor: colors.border }}>
+                      <div className="flex items-center justify-between">
+                        <h3 className="font-semibold text-lg" style={{ color: colors.text }}>Notificaciones</h3>
+                        <button 
+                          onClick={() => setShowNotifications(false)}
+                          className="p-1 rounded-full transition-colors"
+                          style={{ ':hover': { backgroundColor: isDark ? colors.bg : '#f3f4f6' } }}
+                          onMouseEnter={(e) => e.currentTarget.style.backgroundColor = isDark ? colors.bg : '#f3f4f6'}
+                          onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
+                        >
+                          <svg className="w-4 h-4" style={{ color: colors.textSecondary }} fill="currentColor" viewBox="0 0 20 20">
+                            <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
+                          </svg>
+                        </button>
+                      </div>
+                    </div>
+                    <div className="max-h-96 overflow-y-auto">
+                      {[
+                        { id: 1, title: "Nuevo escaneo QR", message: "María García escaneó token de comida", time: "Hace 2 min", unread: true },
+                        { id: 2, title: "Token creado", message: "500 tokens de transporte agregados al sistema", time: "Hace 15 min", unread: true },
+                        { id: 3, title: "Usuario registrado", message: "Juan Pérez se registró en el sistema", time: "Hace 1 hora", unread: true },
+                        { id: 4, title: "Sistema actualizado", message: "Nueva versión 2.1.0 instalada correctamente", time: "Hace 2 horas", unread: false },
+                        { id: 5, title: "Backup completado", message: "Respaldo automático realizado exitosamente", time: "Hace 6 horas", unread: false },
+                      ].map((notif) => (
+                        <div 
+                          key={notif.id} 
+                          className="p-4 border-b transition-colors cursor-pointer"
+                          style={{ 
+                            borderColor: colors.border,
+                            backgroundColor: notif.unread ? (isDark ? '#1e3a8a20' : '#dbeafe') : 'transparent',
+                          }}
+                          onMouseEnter={(e) => e.currentTarget.style.backgroundColor = isDark ? colors.bg : '#f9fafb'}
+                          onMouseLeave={(e) => e.currentTarget.style.backgroundColor = notif.unread ? (isDark ? '#1e3a8a20' : '#dbeafe') : 'transparent'}
+                        >
+                          <div className="flex items-start">
+                            {notif.unread && (
+                              <div className="w-2 h-2 bg-blue-500 rounded-full mt-2 mr-3 flex-shrink-0"></div>
+                            )}
+                            <div className="flex-1 min-w-0">
+                              <p className="font-medium text-sm" style={{ color: colors.text }}>{notif.title}</p>
+                              <p className="text-sm mt-1" style={{ color: colors.textSecondary }}>{notif.message}</p>
+                              <p className="text-xs mt-2" style={{ color: colors.textSecondary }}>{notif.time}</p>
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                    <div className="p-3 border-t text-center" style={{ borderColor: colors.border }}>
+                      <button 
+                        onClick={() => setShowNotifications(false)}
+                        className="text-sm font-medium hover:opacity-80 transition-opacity"
+                        style={{ color: '#3b82f6' }}
+                      >
+                        Ver todas las notificaciones
+                      </button>
+                    </div>
+                  </div>
+                  </>
+                )}
+              </div>
+              
+              <button 
+                onClick={() => handleSectionChange('profile')}
+                className="p-2 rounded-lg transition-colors" 
+                style={{ color: colors.text }}
+                title="Ir a Perfil"
+                onMouseEnter={(e) => e.currentTarget.style.backgroundColor = isDark ? colors.bg : '#f3f4f6'}
+                onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
+              >
                 <Settings size={20} />
               </button>
-              <button onClick={toggleTheme} className="p-2 rounded-lg hover:opacity-70" style={{ color: colors.text }}>
+              <button 
+                onClick={toggleTheme} 
+                className="p-2 rounded-lg transition-colors" 
+                style={{ color: colors.text }}
+                title={isDark ? 'Cambiar a tema claro' : 'Cambiar a tema oscuro'}
+                onMouseEnter={(e) => e.currentTarget.style.backgroundColor = isDark ? colors.bg : '#f3f4f6'}
+                onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
+              >
                 {isDark ? <Sun size={20} /> : <Moon size={20} />}
               </button>
             </div>
